@@ -6,18 +6,22 @@ import cv2
 from PyQt4 import QtCore, QtGui
 
 from filters import AbstractFilter, FilterWrapper
-from util import ProcessThread
 from .controller_ui import ControllerUI
+from util import WorkerQueue
 
 
 class MainWindow(QtGui.QMainWindow):
+    imageChanger = QtCore.pyqtSignal(object)
+
     def __init__(self, parent=None):
         QtGui.QWidget.__init__(self, parent)
         self.__originalImage = None
         self.__editedImage = None
+        self.imageChanger.connect(self.__image_changer)
         self.__imageMaxHeight = 663
         self.__imageMaxWidth = 1000
         self.__i = 0
+        self.__worker = WorkerQueue()
         for (module_loader, name, ispkg) in pkgutil.iter_modules(['./filters']):
             importlib.import_module('.' + name, 'filters')
         self.__allFilterClasses = [cls for cls in AbstractFilter.__subclasses__()]
@@ -85,19 +89,16 @@ class MainWindow(QtGui.QMainWindow):
         self.__filterList.move(20, 55)
 
         # Value Changer 1
-        self.__valueChanger1Thread = None
         self.__valueChanger1 = ControllerUI(panel_ui, "default", 1, 10, self.__value_changer_1_changed)
         self.__valueChanger1.resize(panel_ui_w-40, 50)
         self.__valueChanger1.move(20, 58 + panel_ui_h - 230)
 
         # Value Changer 2
-        self.__valueChanger2Thread = None
         self.__valueChanger2 = ControllerUI(panel_ui, "default", 1, 10, self.__value_changer_2_changed)
         self.__valueChanger2.resize(panel_ui_w - 40, 50)
         self.__valueChanger2.move(20, 58 + panel_ui_h - 180)
 
         # Value Changer 3
-        self.__valueChanger3Thread = None
         self.__valueChanger3 = ControllerUI(panel_ui, "default", 1, 10, self.__value_changer_3_changed)
         self.__valueChanger3.resize(panel_ui_w - 40, 50)
         self.__valueChanger3.move(20, 58 + panel_ui_h - 130)
@@ -107,25 +108,13 @@ class MainWindow(QtGui.QMainWindow):
     def __value_changer_1_changed(self, value):
         if self.__currentWrapperIndex == -1:
             return
-        if self.__valueChanger1Thread is not None:
-            self.__valueChanger1Thread.turn_off()
-        self.__valueChanger1Thread = ProcessThread(self.__value_changer_triggered, 0, value)
-        self.__valueChanger1Thread.processed.connect(self.__convert_image)
-        self.__valueChanger1Thread.start()
+        self.__filterWrappers[self.__currentWrapperIndex].apply_filter(0, value)
 
     def __value_changer_2_changed(self, value):
         print('Slider 2 Changed: ', value)
 
     def __value_changer_3_changed(self, value):
         print('Slider 3 Changed: ', value)
-
-    def __value_changer_triggered(self, index, value):
-        print("here 1")
-        self.__filterWrappers[self.__currentWrapperIndex].apply_filter(index, value)
-        print("here 2")
-        self.__apply_all_wrappers(self.__currentWrapperIndex)
-        print("here 3")
-        return False
 
     def __filter_selection_changed(self, cur_item, prev_item):
         wrapper = None
@@ -150,9 +139,10 @@ class MainWindow(QtGui.QMainWindow):
             self.__i += 1
             item = QtGui.QListWidgetItem()
             if len(self.__filterWrappers) == 0:
-                wrapper = FilterWrapper(self.__originalImage, _filter, self.__i)
+                wrapper = FilterWrapper(self.imageChanger, self.__worker, self.__originalImage, _filter, self.__i)
             else:
-                wrapper = FilterWrapper(self.__filterWrappers[-1].filtered(), _filter, self.__i)
+                wrapper = FilterWrapper(self.imageChanger, self.__worker, self.__filterWrappers[-1].filtered(), _filter, self.__i)
+                self.__filterWrappers[-1].set_child(wrapper)
             item.setText(wrapper.name())
             self.__filterWrappers.append(wrapper)
             self.__filterList.addItem(item)
@@ -194,21 +184,6 @@ class MainWindow(QtGui.QMainWindow):
     def __show_original_clicked(self, state):
         self.__imageLabel.setScaledContents(not state)
 
-    def __apply_all_wrappers(self, start=0):
-        limit = len(self.__filterWrappers)
-        if limit <= start:
-            return
-        if start == 0:
-            parent = self.__originalImage
-        else:
-            parent = self.__filterWrappers[start-1].filtered()
-        print("here 2.1")
-        self.__filterWrappers[start].filtered(parent=parent)
-        print("here 2.2")
-        for i in range(start+1, limit):
-            self.__filterWrappers[i].filtered(parent=self.__editedImage)
-        print("Heere 2.3")
-
     def __open_file(self):
         fd = QtGui.QFileDialog(self)
         self.__filename = fd.getOpenFileName()
@@ -221,14 +196,17 @@ class MainWindow(QtGui.QMainWindow):
                 self.__filterWrappers.clear()
                 self.__convert_image(True)
                 return
-        self.__apply_all_wrappers()
+            self.__filterWrappers[0].filtered(parent=self.__originalImage)
         self.__convert_image(False)
 
     def __save_file(self):
         pass
 
+    def __image_changer(self, img):
+        self.__editedImage = img
+        self.__convert_image(False)
+
     def __convert_image(self, original):
-        print("Converting")
         if original:
             cv_img = self.__originalImage
         else:

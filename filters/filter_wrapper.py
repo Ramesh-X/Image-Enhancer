@@ -1,10 +1,9 @@
-from util import ProcessThread
-
-
 class FilterWrapper(object):
-    def __init__(self, parent_image, _filter, i):
+    def __init__(self, image_changer, worker_queue, parent_image, _filter, i):
         self.filter = _filter
-        self.__process = None
+        self.__image_changer = image_changer
+        self.__child = None
+        self.__worker = worker_queue
         self.__original = parent_image
         self.__edited = parent_image
         self.__name = '%s %d' % (_filter.name(), i)
@@ -15,27 +14,24 @@ class FilterWrapper(object):
     def parent(self):
         return self.__original
 
+    def child(self):
+        return self.__child
+
+    def set_child(self, child):
+        self.__child = child
+
     def edited(self):
         return self.__edited
 
-    def wait(self):
-        self.__process.wait()
-        return self.__edited
-
     def __apply(self):
-        print("F1")
-        if self.__process is not None:
-            print("turn off")
-            self.__process.turn_off()
-        print("F2")
-        self.__process = ProcessThread(self.filter.apply_filter, self.__original, *self.__current)
-        self.__process.processed.connect(self.__finished)
-        print("F3")
-        self.__process.start()
+        self.__worker.add_work(self.__name, self.__finished, self.filter.apply_filter, self.__original, *self.__current)
 
     def __finished(self, img):
         self.__edited = img
-        self.__process = None
+        if self.__child is None:
+            self.__image_changer.emit(img)
+        else:
+            self.__child.filtered(img)
 
     def filtered(self, parent=None):
         if parent is not None:

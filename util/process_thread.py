@@ -1,5 +1,4 @@
 from PyQt4 import QtCore
-import threading
 
 
 class ProcessThread(QtCore.QThread):
@@ -13,16 +12,10 @@ class ProcessThread(QtCore.QThread):
         self.setTerminationEnabled(True)
 
     def __del__(self):
-        print("TERMINATED")
-        #self.wait()
+        self.wait()
 
     def run(self):
         ret = self.__process(*self.__args)
         if self.__valid:
             self.processed.emit(ret)
-
-    def turn_off(self):
-        pass
-        #self.__valid = False
-        #threading.Thread(target=self.terminate).start()
 

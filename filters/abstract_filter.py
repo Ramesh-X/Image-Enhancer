@@ -1,7 +1,7 @@
-from abc import ABC, abstractmethod
+from abc import ABCMeta, abstractmethod
 
 
-class AbstractFilter(ABC):
+class AbstractFilter(metaclass=ABCMeta):
 
     @abstractmethod
     def apply_filter(self, src_img, slider1, slider2, slider3):
