@@ -1,10 +1,12 @@
-from PyQt4 import QtCore, QtGui
-import cv2
-import pkgutil
 import importlib
+import pkgutil
 from collections import defaultdict
 
+import cv2
+from PyQt4 import QtCore, QtGui
+
 from filters import AbstractFilter, FilterWrapper
+from util import ProcessThread
 from .controller_ui import ControllerUI
 
 
@@ -36,18 +38,18 @@ class MainWindow(QtGui.QMainWindow):
 
         # Open Image Button
         self.__openImageButton = QtGui.QPushButton('Open Image', panel_ui)
-        QtCore.QObject.connect(self.__openImageButton, QtCore.SIGNAL("clicked()"), self.__open_file)
+        self.__openImageButton.clicked.connect(self.__open_file)
         self.__openImageButton.move(15, 10)
 
         # Save Image Button
         self.__saveImageButton = QtGui.QPushButton('Save Image', panel_ui)
-        QtCore.QObject.connect(self.__saveImageButton, QtCore.SIGNAL("clicked()"), self.__save_file)
+        self.__saveImageButton.clicked.connect(self.__save_file)
         self.__saveImageButton.move(95, 10)
 
         # Original Select CheckBox
         self.__showOriginalCheckBox = QtGui.QCheckBox('Show Original Size', panel_ui)
         self.__showOriginalCheckBox.move(180, 15)
-        QtCore.QObject.connect(self.__showOriginalCheckBox, QtCore.SIGNAL("stateChanged(int)"), self.__show_original_clicked)
+        self.__showOriginalCheckBox.stateChanged.connect(self.__show_original_clicked)
 
         # Image info label
         self.__imageInfoLabel = QtGui.QLabel("Mouse hover the image to show the original image", image_ui)
@@ -72,27 +74,30 @@ class MainWindow(QtGui.QMainWindow):
         self.__filterListMenu = QtGui.QMenu()
         self.__filterListMenu.addAction("Remove Item")
         self.__filterListMenu.addMenu(self.__setup_filters(self.__filterListMenu))
-        QtCore.QObject.connect(self.__filterListMenu, QtCore.SIGNAL("triggered(QAction*)"), self.__filter_list_menu_item_clicked)
+        self.__filterListMenu.triggered.connect(self.__filter_list_menu_item_clicked)
 
         # Filters List
         self.__filterList = QtGui.QListWidget(panel_ui)
         self.__filterList.setContextMenuPolicy(QtCore.Qt.CustomContextMenu)
-        QtCore.QObject.connect(self.__filterList, QtCore.SIGNAL("customContextMenuRequested(QPoint)"), self.__filter_list_right_clicked)
-        QtCore.QObject.connect(self.__filterList, QtCore.SIGNAL("currentItemChanged(QListWidgetItem*, QListWidgetItem*)"), self.__filter_selection_changed)
+        self.__filterList.customContextMenuRequested.connect(self.__filter_list_right_clicked)
+        self.__filterList.currentItemChanged.connect(self.__filter_selection_changed)
         self.__filterList.resize(panel_ui_w - 40, panel_ui_h - 240)
         self.__filterList.move(20, 55)
 
         # Value Changer 1
+        self.__valueChanger1Thread = None
         self.__valueChanger1 = ControllerUI(panel_ui, "default", 1, 10, self.__value_changer_1_changed)
         self.__valueChanger1.resize(panel_ui_w-40, 50)
         self.__valueChanger1.move(20, 58 + panel_ui_h - 230)
 
         # Value Changer 2
+        self.__valueChanger2Thread = None
         self.__valueChanger2 = ControllerUI(panel_ui, "default", 1, 10, self.__value_changer_2_changed)
         self.__valueChanger2.resize(panel_ui_w - 40, 50)
         self.__valueChanger2.move(20, 58 + panel_ui_h - 180)
 
         # Value Changer 3
+        self.__valueChanger3Thread = None
         self.__valueChanger3 = ControllerUI(panel_ui, "default", 1, 10, self.__value_changer_3_changed)
         self.__valueChanger3.resize(panel_ui_w - 40, 50)
         self.__valueChanger3.move(20, 58 + panel_ui_h - 130)
@@ -102,15 +107,25 @@ class MainWindow(QtGui.QMainWindow):
     def __value_changer_1_changed(self, value):
         if self.__currentWrapperIndex == -1:
             return
-        self.__filterWrappers[self.__currentWrapperIndex].apply_filter(0, value)
-        self.__apply_all_wrappers(self.__currentWrapperIndex)
-        self.__convert_image(False)
+        if self.__valueChanger1Thread is not None:
+            self.__valueChanger1Thread.turn_off()
+        self.__valueChanger1Thread = ProcessThread(self.__value_changer_triggered, 0, value)
+        self.__valueChanger1Thread.processed.connect(self.__convert_image)
+        self.__valueChanger1Thread.start()
 
     def __value_changer_2_changed(self, value):
         print('Slider 2 Changed: ', value)
 
     def __value_changer_3_changed(self, value):
         print('Slider 3 Changed: ', value)
+
+    def __value_changer_triggered(self, index, value):
+        print("here 1")
+        self.__filterWrappers[self.__currentWrapperIndex].apply_filter(index, value)
+        print("here 2")
+        self.__apply_all_wrappers(self.__currentWrapperIndex)
+        print("here 3")
+        return False
 
     def __filter_selection_changed(self, cur_item, prev_item):
         wrapper = None
@@ -187,9 +202,12 @@ class MainWindow(QtGui.QMainWindow):
             parent = self.__originalImage
         else:
             parent = self.__filterWrappers[start-1].filtered()
-        self.__editedImage = self.__filterWrappers[start].filtered(parent=parent)
+        print("here 2.1")
+        self.__filterWrappers[start].filtered(parent=parent)
+        print("here 2.2")
         for i in range(start+1, limit):
-            self.__editedImage = self.__filterWrappers[i].filtered(parent=self.__editedImage)
+            self.__filterWrappers[i].filtered(parent=self.__editedImage)
+        print("Heere 2.3")
 
     def __open_file(self):
         fd = QtGui.QFileDialog(self)
@@ -210,6 +228,7 @@ class MainWindow(QtGui.QMainWindow):
         pass
 
     def __convert_image(self, original):
+        print("Converting")
         if original:
             cv_img = self.__originalImage
         else:
