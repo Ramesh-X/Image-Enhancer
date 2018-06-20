@@ -133,13 +133,14 @@ class MainWindow(QtGui.QMainWindow):
 
     def __filter_list_menu_item_clicked(self, item):
         name = item.text()
+        if name == "Remove Item":
+            # if self.__filterList.sele
+            return
         _filter = None
         for f in self.__allFilters:
             if f.name() == name:
                 _filter = f
-        if _filter is None:
-            pass
-        else:
+        if _filter is not None:
             self.__i += 1
             item = QtGui.QListWidgetItem()
             if len(self.__filterWrappers) == 0:
@@ -162,7 +163,7 @@ class MainWindow(QtGui.QMainWindow):
         for filter_type in filter_dict:
             filter_list = filter_dict[filter_type]
             if len(filter_list) > 1:
-                menu_item = QtGui.QMenu(filter_type, filter)
+                menu_item = QtGui.QMenu(filter_type, filter_menu)
                 for _filter in filter_list:
                     menu_item.addAction(_filter.name())
                 filter_menu.addMenu(menu_item)
@@ -201,6 +202,7 @@ class MainWindow(QtGui.QMainWindow):
                 self.__convert_image(True)
                 return
             self.__filterWrappers[0].filtered(parent=self.__originalImage)
+        self.__convert_image(True)
 
     def __save_file(self):
         filename = QtGui.QFileDialog.getSaveFileName(self, "Save Image", directory=self.__filename, filter="Image Files (*.png *.jpg *.bmp);;All Files (*.*)")
