@@ -111,10 +111,14 @@ class MainWindow(QtGui.QMainWindow):
         self.__filterWrappers[self.__currentWrapperIndex].apply_filter(0, value)
 
     def __value_changer_2_changed(self, value):
-        print('Slider 2 Changed: ', value)
+        if self.__currentWrapperIndex == -1:
+            return
+        self.__filterWrappers[self.__currentWrapperIndex].apply_filter(1, value)
 
     def __value_changer_3_changed(self, value):
-        print('Slider 3 Changed: ', value)
+        if self.__currentWrapperIndex == -1:
+            return
+        self.__filterWrappers[self.__currentWrapperIndex].apply_filter(2, value)
 
     def __filter_selection_changed(self, cur_item, prev_item):
         wrapper = None
@@ -146,7 +150,6 @@ class MainWindow(QtGui.QMainWindow):
             item.setText(wrapper.name())
             self.__filterWrappers.append(wrapper)
             self.__filterList.addItem(item)
-            self.__convert_image(False)
 
     def __setup_filters(self, parent):
         self.__allFilters = [_filter() for _filter in self.__allFilterClasses]
@@ -185,8 +188,9 @@ class MainWindow(QtGui.QMainWindow):
         self.__imageLabel.setScaledContents(not state)
 
     def __open_file(self):
-        fd = QtGui.QFileDialog(self)
-        self.__filename = fd.getOpenFileName()
+        self.__filename = QtGui.QFileDialog.getOpenFileName(self, "Open Image", filter="Image Files (*.png *.jpg *.bmp);;All Files (*.*)")
+        if self.__filename is None or self.__filename.strip() == "":
+            return
         self.__originalImage = cv2.imread(self.__filename)
         self.__editedImage = self.__originalImage
         if len(self.__filterWrappers) != 0:
@@ -197,10 +201,13 @@ class MainWindow(QtGui.QMainWindow):
                 self.__convert_image(True)
                 return
             self.__filterWrappers[0].filtered(parent=self.__originalImage)
-        self.__convert_image(False)
 
     def __save_file(self):
-        pass
+        filename = QtGui.QFileDialog.getSaveFileName(self, "Save Image", directory=self.__filename, filter="Image Files (*.png *.jpg *.bmp);;All Files (*.*)")
+        if filename is None or filename.strip() == "":
+            return
+        cv2.imwrite(filename, self.__editedImage)
+        QtGui.QMessageBox.information(self, "Image Saving", "Image Saved..!\n\nLocation: %s" % filename, QtGui.QMessageBox.Ok)
 
     def __image_changer(self, img):
         self.__editedImage = img

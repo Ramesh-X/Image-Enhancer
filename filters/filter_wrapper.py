@@ -10,6 +10,7 @@ class FilterWrapper(object):
         self.__current = [(value[1] + value[2])/2.0 for value in _filter.setup_sliders()]
         while len(self.__current) < 3:
             self.__current.append(0)
+        self.__apply()
 
     def parent(self):
         return self.__original
@@ -36,6 +37,9 @@ class FilterWrapper(object):
     def filtered(self, parent=None):
         if parent is not None:
             self.__original = parent
+            self.__apply()
+            return self
+        if self.__edited is None:
             self.__apply()
             return self
         return self.__edited

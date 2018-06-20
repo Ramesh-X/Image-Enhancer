@@ -1,9 +1,10 @@
 from PyQt4 import QtCore
 
 from .process_thread import ProcessThread
+from .singleton import Singleton
 
 
-class WorkerQueue(object):
+class WorkerQueue(metaclass=Singleton):
     def __init__(self):
         self.__work = {}
         self.__i = 0
