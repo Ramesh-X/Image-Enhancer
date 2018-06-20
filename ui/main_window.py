@@ -12,6 +12,7 @@ from util import WorkerQueue
 
 class MainWindow(QtGui.QMainWindow):
     imageChanger = QtCore.pyqtSignal(object)
+    jobChanger = QtCore.pyqtSignal()
 
     def __init__(self, parent=None):
         QtGui.QWidget.__init__(self, parent)
@@ -21,7 +22,7 @@ class MainWindow(QtGui.QMainWindow):
         self.__imageMaxHeight = 663
         self.__imageMaxWidth = 1000
         self.__i = 0
-        self.__worker = WorkerQueue()
+        self.__worker = WorkerQueue(job_changer=self.jobChanger)
         for (module_loader, name, ispkg) in pkgutil.iter_modules(['./filters']):
             importlib.import_module('.' + name, 'filters')
         self.__allFilterClasses = [cls for cls in AbstractFilter.__subclasses__()]
@@ -30,7 +31,7 @@ class MainWindow(QtGui.QMainWindow):
     def __setup_ui(self):
         panel_ui = QtGui.QWidget(self)
         panel_ui_w = 300
-        panel_ui_h = self.__imageMaxHeight + 50
+        panel_ui_h = self.__imageMaxHeight + 70
         panel_ui.resize(panel_ui_w, panel_ui_h)
         panel_ui.move(0, 0)
 
@@ -60,6 +61,13 @@ class MainWindow(QtGui.QMainWindow):
         self.__imageInfoLabel.setStyleSheet('color: #606060; font-style: italic;')
         self.__imageInfoLabel.adjustSize()
         self.__imageInfoLabel.move(10, 10)
+
+        # Job info label
+        self.__jobInfoLabel = QtGui.QLabel(self)
+        self.__jobInfoLabel.setStyleSheet('color: #202020;')
+        self.jobChanger.connect(self.__job_changed)
+        self.__jobInfoLabel.adjustSize()
+        self.__jobInfoLabel.move(10, panel_ui_h)
 
         # Image Label
         self.__imageLabel = QtGui.QLabel(image_ui)
@@ -104,6 +112,10 @@ class MainWindow(QtGui.QMainWindow):
         self.__valueChanger3.move(20, 58 + panel_ui_h - 130)
 
         self.resize(panel_ui_w + image_ui_w + 10, panel_ui_h + 15)
+
+    def __job_changed(self):
+        self.__jobInfoLabel.setText(str(self.__worker))
+        self.__jobInfoLabel.adjustSize()
 
     def __value_changer_1_changed(self, value):
         if self.__currentWrapperIndex == -1:

@@ -5,9 +5,10 @@ from .singleton import Singleton
 
 
 class WorkerQueue(metaclass=Singleton):
-    def __init__(self):
+    def __init__(self, job_changer):
         self.__work = {}
         self.__i = 0
+        self.__jobChanger = job_changer
         self.__mutex = QtCore.QMutex()
         self.__thread = None
         self.__finish_func = None
@@ -47,6 +48,7 @@ class WorkerQueue(metaclass=Singleton):
             self.__thread.start()
         finally:
             self.__mutex.unlock()
+            self.__jobChanger.emit()
 
     def __finished(self, img):
         self.__finish_func(img)
@@ -57,3 +59,11 @@ class WorkerQueue(metaclass=Singleton):
             self.__do_work()
             self.__thread.wait()
 
+    def __str__(self):
+        jobs = len(self.__work)
+        is_run = self.__thread is not None and self.__thread.isRunning()
+        if is_run:
+            s = 'Job is running..'
+        else:
+            s = 'No job is running..'
+        return '%s %d jobs in the queue' % (s, jobs)
