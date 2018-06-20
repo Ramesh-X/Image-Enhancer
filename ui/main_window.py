@@ -134,8 +134,25 @@ class MainWindow(QtGui.QMainWindow):
     def __filter_list_menu_item_clicked(self, item):
         name = item.text()
         if name == "Remove Item":
-            # if self.__filterList.sele
-            return
+            if self.__currentWrapperIndex == -1:
+                return
+            limit = len(self.__filterWrappers)
+            if self.__currentWrapperIndex != 0:
+                if self.__currentWrapperIndex + 1 == limit:
+                    self.__filterWrappers[self.__currentWrapperIndex - 1].set_child(None)
+                    self.__editedImage = self.__filterWrappers[self.__currentWrapperIndex - 1].filtered()
+                    self.__convert_image(False)
+                else:
+                    self.__filterWrappers[self.__currentWrapperIndex - 1].set_child(self.__filterWrappers[self.__currentWrapperIndex + 1])
+                    self.__filterWrappers[self.__currentWrapperIndex + 1].filtered(parent=self.__filterWrappers[self.__currentWrapperIndex - 1].filtered())
+            else:
+                if self.__currentWrapperIndex + 1 == limit:
+                    self.__editedImage = self.__originalImage
+                    self.__convert_image(True)
+                else:
+                    self.__filterWrappers[self.__currentWrapperIndex + 1].filtered(parent=self.__originalImage)
+            del self.__filterWrappers[self.__currentWrapperIndex]
+            self.__filterList.takeItem(self.__currentWrapperIndex)
         _filter = None
         for f in self.__allFilters:
             if f.name() == name:

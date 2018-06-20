@@ -1,3 +1,6 @@
+import numpy as np
+
+
 class FilterWrapper(object):
     def __init__(self, image_changer, worker_queue, parent_image, _filter, i):
         self.filter = _filter
@@ -25,7 +28,8 @@ class FilterWrapper(object):
         return self.__edited
 
     def __apply(self):
-        self.__worker.add_work(self.__name, self.__finished, self.filter.apply_filter, self.__original, *self.__current)
+        if self.__original is not None and type(self.__original) is np.ndarray:
+            self.__worker.add_work(self.__name, self.__finished, self.filter.apply_filter, self.__original, *self.__current)
 
     def __finished(self, img):
         self.__edited = img
