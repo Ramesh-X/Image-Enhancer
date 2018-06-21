@@ -4,7 +4,10 @@ from .process_thread import ProcessThread
 from .singleton import Singleton
 
 
-class WorkerQueue(metaclass=Singleton):
+class WorkerQueue:
+    __metaclass__ = Singleton
+
+
     def __init__(self, job_changer):
         self.__work = {}
         self.__i = 0
