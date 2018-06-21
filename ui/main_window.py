@@ -30,8 +30,8 @@ class MainWindow(QtGui.QMainWindow):
 
     def __setup_ui(self):
         panel_ui = QtGui.QWidget(self)
-        panel_ui_w = 300
-        panel_ui_h = self.__imageMaxHeight + 70
+        panel_ui_w = 350
+        panel_ui_h = self.__imageMaxHeight + 80
         panel_ui.resize(panel_ui_w, panel_ui_h)
         panel_ui.move(0, 0)
 
@@ -44,16 +44,18 @@ class MainWindow(QtGui.QMainWindow):
         # Open Image Button
         self.__openImageButton = QtGui.QPushButton('Open Image', panel_ui)
         self.__openImageButton.clicked.connect(self.__open_file)
+        self.__openImageButton.resize(100, 25)
         self.__openImageButton.move(15, 10)
 
         # Save Image Button
         self.__saveImageButton = QtGui.QPushButton('Save Image', panel_ui)
         self.__saveImageButton.clicked.connect(self.__save_file)
-        self.__saveImageButton.move(95, 10)
+        self.__saveImageButton.resize(100, 25)
+        self.__saveImageButton.move(120, 10)
 
         # Original Select CheckBox
-        self.__showOriginalCheckBox = QtGui.QCheckBox('Show Original Size', panel_ui)
-        self.__showOriginalCheckBox.move(180, 15)
+        self.__showOriginalCheckBox = QtGui.QCheckBox('Show Original\n Size', panel_ui)
+        self.__showOriginalCheckBox.move(225, 8)
         self.__showOriginalCheckBox.stateChanged.connect(self.__show_original_clicked)
 
         # Image info label
@@ -73,14 +75,14 @@ class MainWindow(QtGui.QMainWindow):
         self.__imageLabel = QtGui.QLabel(image_ui)
         self.__imageLabel.setScaledContents(True)
         self.__imageLabel.setMinimumSize(1, 1)
-        self.__imageLabel.move(10, 25)
+        self.__imageLabel.move(10, 30)
         self.__imageLabel.installEventFilter(self)
 
         # Filter List Information
         self.__filterListInfoLabel = QtGui.QLabel("Right click on the list to add/remove filters", panel_ui)
         self.__filterListInfoLabel.setStyleSheet('color: #606060; font-style: italic;')
         self.__filterListInfoLabel.adjustSize()
-        self.__filterListInfoLabel.move(20, 40)
+        self.__filterListInfoLabel.move(20, 45)
 
         # Filter List Menu
         self.__filterListMenu = QtGui.QMenu()
@@ -94,7 +96,7 @@ class MainWindow(QtGui.QMainWindow):
         self.__filterList.customContextMenuRequested.connect(self.__filter_list_right_clicked)
         self.__filterList.currentItemChanged.connect(self.__filter_selection_changed)
         self.__filterList.resize(panel_ui_w - 40, panel_ui_h - 240)
-        self.__filterList.move(20, 55)
+        self.__filterList.move(20, 65)
 
         # Value Changer 1
         self.__valueChanger1 = ControllerUI(panel_ui, "default", 1, 10, self.__value_changer_1_changed)
@@ -111,7 +113,8 @@ class MainWindow(QtGui.QMainWindow):
         self.__valueChanger3.resize(panel_ui_w - 40, 50)
         self.__valueChanger3.move(20, 58 + panel_ui_h - 130)
 
-        self.resize(panel_ui_w + image_ui_w + 10, panel_ui_h + 15)
+        self.resize(panel_ui_w + image_ui_w + 10, panel_ui_h + 20)
+        self.setWindowTitle("Image Enhancer")
 
     def __job_changed(self):
         self.__jobInfoLabel.setText(str(self.__worker))
@@ -219,8 +222,9 @@ class MainWindow(QtGui.QMainWindow):
 
     def __open_file(self):
         self.__filename = QtGui.QFileDialog.getOpenFileName(self, "Open Image", filter="Image Files (*.png *.jpg *.bmp);;All Files (*.*)")
-        if self.__filename is None or self.__filename.strip() == "":
+        if self.__filename is None or str(self.__filename).strip() == "":
             return
+        self.__filename = str(self.__filename)
         self.__originalImage = cv2.imread(self.__filename)
         self.__editedImage = self.__originalImage
         if len(self.__filterWrappers) != 0:
