@@ -113,7 +113,8 @@ class MainWindow(QtGui.QMainWindow):
         self.__valueChanger3.resize(panel_ui_w - 40, 50)
         self.__valueChanger3.move(20, 58 + panel_ui_h - 130)
 
-        self.resize(panel_ui_w + image_ui_w + 10, panel_ui_h + 15)
+        self.resize(panel_ui_w + image_ui_w + 10, panel_ui_h + 20)
+        self.setWindowTitle("Image Enhancer")
 
     def __job_changed(self):
         self.__jobInfoLabel.setText(str(self.__worker))
