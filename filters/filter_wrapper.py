@@ -29,7 +29,7 @@ class FilterWrapper(object):
 
     def __apply(self):
         if self.__original is not None and type(self.__original) is np.ndarray:
-            self.__worker.add_work(self.__name, self.__finished, self.filter.apply_filter, np.copy(self.__original), *self.__current)
+            self.__worker.add_work(self.__name, self.__finished, self.filter.apply_filter, self.__original, *self.__current)
 
     def __finished(self, img):
         self.__edited = img

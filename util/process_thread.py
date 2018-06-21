@@ -1,4 +1,5 @@
 from PyQt4 import QtCore
+import numpy as np
 
 
 class ProcessThread(QtCore.QThread):
@@ -15,6 +16,10 @@ class ProcessThread(QtCore.QThread):
         self.wait()
 
     def run(self):
+        if type(self.__args[0]) is np.ndarray:
+            args = list(self.__args)
+            args[0] = np.copy(args[0])
+            self.__args = tuple(args)
         ret = self.__process(*self.__args)
         if self.__valid:
             self.processed.emit(ret)

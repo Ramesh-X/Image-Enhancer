@@ -1,4 +1,5 @@
 from PyQt4 import QtCore
+import numpy as np
 
 from .process_thread import ProcessThread
 from .singleton import Singleton
