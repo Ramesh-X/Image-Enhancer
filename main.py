@@ -1,3 +1,4 @@
+from __future__ import print_function, division, absolute_import
 from PyQt4 import QtGui
 from ui import MainWindow
 import sys
