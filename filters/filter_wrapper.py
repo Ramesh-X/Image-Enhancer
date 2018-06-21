@@ -34,7 +34,7 @@ class FilterWrapper(object):
     def __finished(self, img):
         self.__edited = img
         if self.__child is None:
-            self.__image_changer.emit(img)
+            self.__image_changer.emit((np.matrix.clip(img, 0, 1) * 255).astype(np.uint8))
         else:
             self.__child.filtered(img)
 
