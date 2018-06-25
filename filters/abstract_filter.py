@@ -5,6 +5,7 @@ from abc import ABCMeta, abstractmethod
 class AbstractFilter:
     __metaclass__=ABCMeta
 
+
     @abstractmethod
     def apply_filter(self, src_img, slider1, slider2, slider3):
         """

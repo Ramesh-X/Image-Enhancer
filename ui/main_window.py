@@ -4,6 +4,7 @@ import pkgutil
 from collections import defaultdict
 
 import cv2
+import numpy as np
 from PyQt4 import QtCore, QtGui
 
 from filters import AbstractFilter, FilterWrapper
@@ -18,6 +19,7 @@ class MainWindow(QtGui.QMainWindow):
     def __init__(self, parent=None):
         QtGui.QWidget.__init__(self, parent)
         self.__originalImage = None
+        self.__originalImage_uint = None
         self.__editedImage = None
         self.imageChanger.connect(self.__image_changer)
         self.__imageMaxHeight = 663
@@ -163,7 +165,7 @@ class MainWindow(QtGui.QMainWindow):
                     self.__filterWrappers[self.__currentWrapperIndex + 1].filtered(parent=self.__filterWrappers[self.__currentWrapperIndex - 1].filtered())
             else:
                 if self.__currentWrapperIndex + 1 == limit:
-                    self.__editedImage = self.__originalImage
+                    self.__editedImage = self.__originalImage_uint
                     self.__convert_image(True)
                 else:
                     self.__filterWrappers[self.__currentWrapperIndex + 1].filtered(parent=self.__originalImage)
@@ -226,8 +228,9 @@ class MainWindow(QtGui.QMainWindow):
         if self.__filename is None or str(self.__filename).strip() == "":
             return
         self.__filename = str(self.__filename)
-        self.__originalImage = cv2.imread(self.__filename)
-        self.__editedImage = self.__originalImage
+        self.__originalImage_uint = cv2.imread(self.__filename)
+        self.__originalImage = self.__originalImage_uint.astype(np.float32) / 255.0
+        self.__editedImage = self.__originalImage_uint
         if len(self.__filterWrappers) != 0:
             result = QtGui.QMessageBox.question(self, 'Open File', 'Filter list is not empty. Clear them..?', QtGui.QMessageBox.Yes | QtGui.QMessageBox.No, QtGui.QMessageBox.No)
             if result == QtGui.QMessageBox.Yes:
@@ -251,7 +254,7 @@ class MainWindow(QtGui.QMainWindow):
 
     def __convert_image(self, original):
         if original:
-            cv_img = self.__originalImage
+            cv_img = self.__originalImage_uint
         else:
             cv_img = self.__editedImage
         if cv_img is None:

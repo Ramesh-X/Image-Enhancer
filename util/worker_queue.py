@@ -1,12 +1,13 @@
 from __future__ import print_function, division, absolute_import
 from PyQt4 import QtCore
+import numpy as np
 
 from .process_thread import ProcessThread
 from .singleton import Singleton
 
 
 class WorkerQueue:
-    __metaclass__ = Singleton
+    __metaclass__=Singleton
 
 
     def __init__(self, job_changer):
